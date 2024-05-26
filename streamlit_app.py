@@ -23,7 +23,7 @@ except subprocess.CalledProcessError as e:
     print(e.stderr.decode())
 
 
-subprocess.run([f"{sys.executable}", "setup.py"])
+subprocess.run([f"{sys.executable}", "setup.py", "install"])
 
 #######################
 # Page configuration
