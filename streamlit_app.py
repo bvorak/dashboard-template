@@ -290,7 +290,7 @@ with col[2]:
                      )}
                  )
     
-    with st.expander('About', expanded=True):
+    #with st.expander('About', expanded=True):
         #st.write(
         #    help(fw.read_from_CSV)
         #)
