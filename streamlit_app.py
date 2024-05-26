@@ -7,7 +7,22 @@ import plotly.express as px
 import subprocess
 import sys
 
-subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
+
+try:
+    result = subprocess.run(
+        ["sudo", "npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    print(result.stdout.decode())
+    print(result.stderr.decode())
+except subprocess.CalledProcessError as e:
+    print(f"An error occurred: {e}")
+    print(e.stdout.decode())
+    print(e.stderr.decode())
+
+
 #subprocess.run([f"{sys.executable}", "setup.py"])
 
 #######################
