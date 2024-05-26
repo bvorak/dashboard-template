@@ -8,6 +8,8 @@ import subprocess
 import sys
 
 
+
+### installing electron app
 try:
     result = subprocess.run(
         ["sudo", "npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"],
@@ -22,6 +24,9 @@ except subprocess.CalledProcessError as e:
     print(e.stdout.decode())
     print(e.stderr.decode())
 
+
+### chatgpt solution to install the foodwebviz code  
+##To install a package using setup.py without invoking the requirements.txt again, you can use pip to install the package in editable mode (development mode). This approach installs your package directly from the source directory and doesn't reprocess requirements.txt
 
 def run_command(command):
     result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -39,6 +44,12 @@ except subprocess.CalledProcessError as e:
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
 
+
+
+
+#### now if everything workded, this should too:
+import foodwebviz as fw    
+
 #######################
 # Page configuration
 st.set_page_config(
@@ -53,6 +64,12 @@ alt.themes.enable("dark")
 #######################
 # Load data
 df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
+
+
+
+### food web test stuff, delete if it doesnt work
+foodweb = fw.read_from_CSV('food-web-geomar.csv')
+
 
 
 #######################
@@ -254,8 +271,11 @@ with col[2]:
                  )
     
     with st.expander('About', expanded=True):
-        st.write('''
-            - Data: [U.S. Census Bureau](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-state-total.html).
-            - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
-            - :orange[**States Migration**]: percentage of states with annual inbound/ outbound migration > 50,000
-            ''')
+        st.write(
+            help(fw.read_from_CSV)
+        )
+        #st.write('''
+        #    - Data: [U.S. Census Bureau](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-state-total.html).
+        #    - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
+        #    - :orange[**States Migration**]: percentage of states with annual inbound/ outbound migration > 50,000
+        #    ''')
