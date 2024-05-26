@@ -25,7 +25,8 @@ alt.themes.enable("light")
 # Load data
 df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 
-
+selected_color_theme = "blues"
+selected_year = 2018
 
 #######################
 # Sidebar
