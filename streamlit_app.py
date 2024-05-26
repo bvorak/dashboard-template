@@ -23,7 +23,21 @@ except subprocess.CalledProcessError as e:
     print(e.stderr.decode())
 
 
-subprocess.run([f"{sys.executable}", "setup.py", "install"])
+def run_command(command):
+    result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(result.stdout.decode())
+    print(result.stderr.decode())
+
+try:
+    # Run pip install in editable mode
+    run_command([f"{sys.executable}", "-m", "pip", "install", "-e", "."])
+
+except subprocess.CalledProcessError as e:
+    print(f"An error occurred: {e}")
+    print(e.stdout.decode())
+    print(e.stderr.decode())
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
 
 #######################
 # Page configuration
