@@ -38,7 +38,7 @@ with st.sidebar:
     year_list = list(df_reshaped.year.unique())[::-1]
     
     de_selected_year = 2014
-    df_selected_year = df_reshaped[df_reshaped.year == selected_year]
+    df_selected_year = df_reshaped[df_reshaped.year == de_selected_year]
     df_selected_year_sorted = df_selected_year.sort_values(by="population", ascending=False)
 
     color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
@@ -105,7 +105,10 @@ def make_heatmap(input_df, input_y, input_x, input_color, input_color_theme):
     return heatmap
 
 # Choropleth map
+
 def make_choropleth(input_df, input_id, input_column, input_color_theme):
+    selected_color_theme = "blues"
+    selected_year = 2018
     choropleth = px.choropleth(input_df, locations=input_id, color=input_column, locationmode="USA-states",
                                color_continuous_scale=input_color_theme,
                                range_color=(0, max(df_selected_year.population)),
@@ -188,6 +191,8 @@ col = st.columns((1.5, 4.5, 2), gap='medium')
 with col[0]:
     st.markdown('#### Gains/Losses')
 
+    selected_color_theme = "blues"
+    selected_year = 2018
     df_population_difference_sorted = calculate_population_difference(df_reshaped, selected_year)
 
     if selected_year > 2010:
