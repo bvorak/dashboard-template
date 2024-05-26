@@ -7,68 +7,8 @@ import plotly.express as px
 import subprocess
 import sys
 
+from streamlit_tree_select import tree_select
 
-
-### installing electron app
-def run_command(command):
-    try:
-        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(result.stdout.decode())
-        print(result.stderr.decode())
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
-        print(e.stdout.decode())
-        print(e.stderr.decode())
-        sys.exit(1)  # Exit if the command fails
-
-# Step 1: Install build and installer
-run_command([sys.executable, "-m", "pip", "install", "--upgrade", "build", "installer"])
-
-# Step 2: Build the package
-run_command([sys.executable, "-m", "build"])
-
-# Step 3: Find the built wheel file
-import glob
-dist_files = glob.glob("dist/*.whl")
-if not dist_files:
-    raise FileNotFoundError("No .whl file found in dist directory")
-
-# Step 4: Install the built package
-run_command([sys.executable, "-m", "pip", "install", dist_files[0]])
-
-# Step 5: Install npm dependencies
-try:
-    run_command(["sudo", "npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
-except subprocess.CalledProcessError:
-    print("Failed to install npm dependencies. Please check the error messages above.")
-    sys.exit(1)  # Exit if the command fails
-
-
-
-### chatgpt solution to install the foodwebviz code  
-##To install a package using setup.py without invoking the requirements.txt again, you can use pip to install the package in editable mode (development mode). This approach installs your package directly from the source directory and doesn't reprocess requirements.txt
-
-def run_command(command):
-    result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(result.stdout.decode())
-    print(result.stderr.decode())
-
-try:
-    # Run pip install in editable mode
-    run_command([f"{sys.executable}", "-m", "pip", "install", "-e", "."])
-
-except subprocess.CalledProcessError as e:
-    print(f"An error occurred: {e}")
-    print(e.stdout.decode())
-    print(e.stderr.decode())
-except Exception as e:
-    print(f"An unexpected error occurred: {e}")
-
-
-
-
-#### now if everything workded, this should too:
-#import foodwebviz as fw    
 
 #######################
 # Page configuration
@@ -87,24 +27,55 @@ df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 
 
 
-### food web test stuff, delete if it doesnt work
-#foodweb = fw.read_from_CSV('food-web-geomar.csv')
-
-
-
 #######################
 # Sidebar
 with st.sidebar:
-    st.title('🏂 US Population Dashboard')
+    #st.title('🏂 US Population Dashboard')
     
-    year_list = list(df_reshaped.year.unique())[::-1]
+    #year_list = list(df_reshaped.year.unique())[::-1]
     
-    selected_year = st.selectbox('Select a year', year_list)
-    df_selected_year = df_reshaped[df_reshaped.year == selected_year]
-    df_selected_year_sorted = df_selected_year.sort_values(by="population", ascending=False)
+    #selected_year = st.selectbox('Select a year', year_list)
+    #df_selected_year = df_reshaped[df_reshaped.year == selected_year]
+    #df_selected_year_sorted = df_selected_year.sort_values(by="population", ascending=False)
 
-    color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
-    selected_color_theme = st.selectbox('Select a color theme', color_theme_list)
+    #color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
+    #selected_color_theme = st.selectbox('Select a color theme', color_theme_list)
+
+    st.title("🐙 Streamlit-tree-select")
+    st.subheader("A simple and elegant checkbox tree for Streamlit.")
+
+    # Create nodes to display
+    nodes = [
+        {"label": "Folder A", "value": "folder_a"},
+        {
+            "label": "Folder B",
+            "value": "folder_b",
+            "children": [
+                {"label": "Sub-folder A", "value": "sub_a"},
+                {"label": "Sub-folder B", "value": "sub_b"},
+                {"label": "Sub-folder C", "value": "sub_c"},
+            ],
+        },
+        {
+            "label": "Folder C",
+            "value": "folder_c",
+            "children": [
+                {"label": "Sub-folder D", "value": "sub_d"},
+                {
+                    "label": "Sub-folder E",
+                    "value": "sub_e",
+                    "children": [
+                        {"label": "Sub-sub-folder A", "value": "sub_sub_a"},
+                        {"label": "Sub-sub-folder B", "value": "sub_sub_b"},
+                    ],
+                },
+                {"label": "Sub-folder F", "value": "sub_f"},
+            ],
+        },
+    ]
+
+    return_select = tree_select(nodes)
+    st.write(return_select)
 
 
 #######################
@@ -290,12 +261,9 @@ with col[2]:
                      )}
                  )
     
-    #with st.expander('About', expanded=True):
-        #st.write(
-        #    help(fw.read_from_CSV)
-        #)
-        #st.write('''
-        #    - Data: [U.S. Census Bureau](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-state-total.html).
-        #    - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
-        #    - :orange[**States Migration**]: percentage of states with annual inbound/ outbound migration > 50,000
-        #    ''')
+    with st.expander('About', expanded=True):
+        st.write('''
+            - Data: [U.S. Census Bureau](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-state-total.html).
+            - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
+            - :orange[**States Migration**]: percentage of states with annual inbound/ outbound migration > 50,000
+            ''')

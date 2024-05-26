@@ -12,3 +12,4 @@ pyvis==0.1.8.2
 kaleido
 psutil
 wand
+streamlit-tree-select
