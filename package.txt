@@ -1,0 +1,2 @@
+nodejs-bin[cmd]
+libmagickwand-dev
