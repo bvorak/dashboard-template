@@ -7,6 +7,7 @@ import plotly.express as px
 import subprocess
 
 subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
+subprocess.run(["python", "setup.py"])
 
 #######################
 # Page configuration
