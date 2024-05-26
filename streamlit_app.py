@@ -4,6 +4,9 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import plotly.express as px
+import subprocess
+
+subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
 
 #######################
 # Page configuration
