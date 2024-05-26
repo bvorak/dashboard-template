@@ -68,7 +68,7 @@ except Exception as e:
 
 
 #### now if everything workded, this should too:
-import foodwebviz as fw    
+#import foodwebviz as fw    
 
 #######################
 # Page configuration
