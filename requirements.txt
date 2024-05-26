@@ -1,6 +1,6 @@
 streamlit
 altair
-numpy==1.23.2
+numpy
 pandas
 networkx==2.6.2
 xlwt==1.3.0
