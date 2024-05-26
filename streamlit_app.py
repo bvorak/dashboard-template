@@ -5,9 +5,10 @@ import pandas as pd
 import altair as alt
 import plotly.express as px
 import subprocess
+import sys
 
 subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
-subprocess.run(["python", "setup.py"])
+subprocess.run([f"{sys.executable}", "setup.py"])
 
 #######################
 # Page configuration
