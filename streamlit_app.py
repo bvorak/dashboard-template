@@ -37,12 +37,12 @@ with st.sidebar:
     
     year_list = list(df_reshaped.year.unique())[::-1]
     
-    selected_year = 2014
+    de_selected_year = 2014
     df_selected_year = df_reshaped[df_reshaped.year == selected_year]
     df_selected_year_sorted = df_selected_year.sort_values(by="population", ascending=False)
 
     color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
-    selected_color_theme = 'blues'
+    de_selected_color_theme = 'blues'
 
 
 
