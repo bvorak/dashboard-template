@@ -56,27 +56,206 @@ with st.sidebar:
                 {"label": "Sub-folder A", "value": "sub_a"},
                 {"label": "Sub-folder B", "value": "sub_b"},
                 {"label": "Sub-folder C", "value": "sub_c"},
+                {
+                    "label": "Sub-folder D",
+                    "value": "sub_d",
+                    "children": [
+                        {"label": "Sub-sub-folder A", "value": "sub_sub_a"},
+                        {"label": "Sub-sub-folder B", "value": "sub_sub_b"},
+                        {"label": "Sub-sub-folder C", "value": "sub_sub_c"},
+                        {"label": "Sub-sub-folder D", "value": "sub_sub_d"},
+                        {"label": "Sub-sub-folder E", "value": "sub_sub_e"},
+                    ],
+                },
+                {"label": "Sub-folder E", "value": "sub_e"},
+                {"label": "Sub-folder F", "value": "sub_f"},
             ],
         },
         {
             "label": "Folder C",
             "value": "folder_c",
             "children": [
-                {"label": "Sub-folder D", "value": "sub_d"},
+                {"label": "Sub-folder G", "value": "sub_g"},
+                {"label": "Sub-folder H", "value": "sub_h"},
                 {
-                    "label": "Sub-folder E",
-                    "value": "sub_e",
+                    "label": "Sub-folder I",
+                    "value": "sub_i",
                     "children": [
-                        {"label": "Sub-sub-folder A", "value": "sub_sub_a"},
-                        {"label": "Sub-sub-folder B", "value": "sub_sub_b"},
+                        {"label": "Sub-sub-folder F", "value": "sub_sub_f"},
+                        {"label": "Sub-sub-folder G", "value": "sub_sub_g"},
+                        {"label": "Sub-sub-folder H", "value": "sub_sub_h"},
+                        {
+                            "label": "Sub-sub-folder I",
+                            "value": "sub_sub_i",
+                            "children": [
+                                {"label": "Sub-sub-sub-folder A", "value": "sub_sub_sub_a"},
+                                {"label": "Sub-sub-sub-folder B", "value": "sub_sub_sub_b"},
+                                {"label": "Sub-sub-sub-folder C", "value": "sub_sub_sub_c"},
+                            ],
+                        },
+                        {"label": "Sub-sub-folder J", "value": "sub_sub_j"},
                     ],
                 },
-                {"label": "Sub-folder F", "value": "sub_f"},
+                {
+                    "label": "Sub-folder J",
+                    "value": "sub_j",
+                    "children": [
+                        {"label": "Sub-sub-folder K", "value": "sub_sub_k"},
+                        {"label": "Sub-sub-folder L", "value": "sub_sub_l"},
+                        {"label": "Sub-sub-folder M", "value": "sub_sub_m"},
+                    ],
+                },
+                {"label": "Sub-folder K", "value": "sub_k"},
+            ],
+        },
+        {
+            "label": "Folder D",
+            "value": "folder_d",
+            "children": [
+                {"label": "Sub-folder L", "value": "sub_l"},
+                {"label": "Sub-folder M", "value": "sub_m"},
+                {"label": "Sub-folder N", "value": "sub_n"},
+                {
+                    "label": "Sub-folder O",
+                    "value": "sub_o",
+                    "children": [
+                        {"label": "Sub-sub-folder N", "value": "sub_sub_n"},
+                        {"label": "Sub-sub-folder O", "value": "sub_sub_o"},
+                        {"label": "Sub-sub-folder P", "value": "sub_sub_p"},
+                        {"label": "Sub-sub-folder Q", "value": "sub_sub_q"},
+                    ],
+                },
+                {"label": "Sub-folder P", "value": "sub_p"},
+            ],
+        },
+        {
+            "label": "Folder E",
+            "value": "folder_e",
+            "children": [
+                {"label": "Sub-folder Q", "value": "sub_q"},
+                {"label": "Sub-folder R", "value": "sub_r"},
+                {"label": "Sub-folder S", "value": "sub_s"},
+                {
+                    "label": "Sub-folder T",
+                    "value": "sub_t",
+                    "children": [
+                        {"label": "Sub-sub-folder R", "value": "sub_sub_r"},
+                        {"label": "Sub-sub-folder S", "value": "sub_sub_s"},
+                        {"label": "Sub-sub-folder T", "value": "sub_sub_t"},
+                        {"label": "Sub-sub-folder U", "value": "sub_sub_u"},
+                        {"label": "Sub-sub-folder V", "value": "sub_sub_v"},
+                    ],
+                },
+                {
+                    "label": "Sub-folder U",
+                    "value": "sub_u",
+                    "children": [
+                        {"label": "Sub-sub-folder W", "value": "sub_sub_w"},
+                        {"label": "Sub-sub-folder X", "value": "sub_sub_x"},
+                        {"label": "Sub-sub-folder Y", "value": "sub_sub_y"},
+                    ],
+                },
+            ],
+        },
+        # Add more folders and sub-folders to reach approximately 200 nodes
+        {
+            "label": "Folder F",
+            "value": "folder_f",
+            "children": [
+                {"label": "Sub-folder V", "value": "sub_v"},
+                {"label": "Sub-folder W", "value": "sub_w"},
+                {"label": "Sub-folder X", "value": "sub_x"},
+                {
+                    "label": "Sub-folder Y",
+                    "value": "sub_y",
+                    "children": [
+                        {"label": "Sub-sub-folder Z", "value": "sub_sub_z"},
+                        {"label": "Sub-sub-folder AA", "value": "sub_sub_aa"},
+                        {"label": "Sub-sub-folder BB", "value": "sub_sub_bb"},
+                    ],
+                },
+                {"label": "Sub-folder Z", "value": "sub_z"},
+            ],
+        },
+        {
+            "label": "Folder G",
+            "value": "folder_g",
+            "children": [
+                {"label": "Sub-folder AA", "value": "sub_aa"},
+                {"label": "Sub-folder BB", "value": "sub_bb"},
+                {"label": "Sub-folder CC", "value": "sub_cc"},
+                {
+                    "label": "Sub-folder DD",
+                    "value": "sub_dd",
+                    "children": [
+                        {"label": "Sub-sub-folder EE", "value": "sub_sub_ee"},
+                        {"label": "Sub-sub-folder FF", "value": "sub_sub_ff"},
+                        {"label": "Sub-sub-folder GG", "value": "sub_sub_gg"},
+                    ],
+                },
+                {"label": "Sub-folder EE", "value": "sub_ee"},
+            ],
+        },
+        {
+            "label": "Folder H",
+            "value": "folder_h",
+            "children": [
+                {"label": "Sub-folder FF", "value": "sub_ff"},
+                {"label": "Sub-folder GG", "value": "sub_gg"},
+                {"label": "Sub-folder HH", "value": "sub_hh"},
+                {
+                    "label": "Sub-folder II",
+                    "value": "sub_ii",
+                    "children": [
+                        {"label": "Sub-sub-folder JJ", "value": "sub_sub_jj"},
+                        {"label": "Sub-sub-folder KK", "value": "sub_sub_kk"},
+                        {"label": "Sub-sub-folder LL", "value": "sub_sub_ll"},
+                    ],
+                },
+                {"label": "Sub-folder JJ", "value": "sub_jj"},
+            ],
+        },
+        {
+            "label": "Folder I",
+            "value": "folder_i",
+            "children": [
+                {"label": "Sub-folder KK", "value": "sub_kk"},
+                {"label": "Sub-folder LL", "value": "sub_ll"},
+                {"label": "Sub-folder MM", "value": "sub_mm"},
+                {
+                    "label": "Sub-folder NN",
+                    "value": "sub_nn",
+                    "children": [
+                        {"label": "Sub-sub-folder OO", "value": "sub_sub_oo"},
+                        {"label": "Sub-sub-folder PP", "value": "sub_sub_pp"},
+                        {"label": "Sub-sub-folder QQ", "value": "sub_sub_qq"},
+                    ],
+                },
+                {"label": "Sub-folder OO", "value": "sub_oo"},
+            ],
+        },
+        {
+            "label": "Folder J",
+            "value": "folder_j",
+            "children": [
+                {"label": "Sub-folder PP", "value": "sub_pp"},
+                {"label": "Sub-folder QQ", "value": "sub_qq"},
+                {"label": "Sub-folder RR", "value": "sub_rr"},
+                {
+                    "label": "Sub-folder SS",
+                    "value": "sub_ss",
+                    "children": [
+                        {"label": "Sub-sub-folder TT", "value": "sub_sub_tt"},
+                        {"label": "Sub-sub-folder UU", "value": "sub_sub_uu"},
+                        {"label": "Sub-sub-folder VV", "value": "sub_sub_vv"},
+                    ],
+                },
+                {"label": "Sub-folder TT", "value": "sub_tt"},
             ],
         },
     ]
 
-    # Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need
+    # Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need to further expand each folder and sub-folder accordingly.
 
 
     return_select = tree_select(nodes)
