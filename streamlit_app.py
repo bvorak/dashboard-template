@@ -88,7 +88,7 @@ df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 
 
 ### food web test stuff, delete if it doesnt work
-foodweb = fw.read_from_CSV('food-web-geomar.csv')
+#foodweb = fw.read_from_CSV('food-web-geomar.csv')
 
 
 
@@ -291,9 +291,9 @@ with col[2]:
                  )
     
     with st.expander('About', expanded=True):
-        st.write(
-            help(fw.read_from_CSV)
-        )
+        #st.write(
+        #    help(fw.read_from_CSV)
+        #)
         #st.write('''
         #    - Data: [U.S. Census Bureau](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-state-total.html).
         #    - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
