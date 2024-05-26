@@ -31,6 +31,8 @@ df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 # Sidebar
 with st.sidebar:
     #st.title('🏂 US Population Dashboard')
+    st.title("🐙 Streamlit-tree-select")
+    st.subheader("A simple and elegant checkbox tree for Streamlit.")
     
     year_list = list(df_reshaped.year.unique())[::-1]
     
@@ -41,8 +43,7 @@ with st.sidebar:
     color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
     selected_color_theme = st.selectbox('Select a color theme', color_theme_list)
 
-    st.title("🐙 Streamlit-tree-select")
-    st.subheader("A simple and elegant checkbox tree for Streamlit.")
+
 
     # Create nodes to display
     nodes = [
@@ -251,7 +252,7 @@ with st.sidebar:
             {"label": "Sub-folder TT", "value": "sub_tt"},
         ],
     },
-]
+    ]
 
 # Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need
 
