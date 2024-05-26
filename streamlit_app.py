@@ -251,10 +251,10 @@ with st.sidebar:
             },
             {"label": "Sub-folder TT", "value": "sub_tt"},
         ],
-    },
+    }
     ]
 
-# Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need
+    # Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need
 
 
     return_select = tree_select(nodes)
