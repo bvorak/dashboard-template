@@ -10,19 +10,39 @@ import sys
 
 
 ### installing electron app
+def run_command(command):
+    try:
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result.stdout.decode())
+        print(result.stderr.decode())
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+        print(e.stdout.decode())
+        print(e.stderr.decode())
+        sys.exit(1)  # Exit if the command fails
+
+# Step 1: Install build and installer
+run_command([sys.executable, "-m", "pip", "install", "--upgrade", "build", "installer"])
+
+# Step 2: Build the package
+run_command([sys.executable, "-m", "build"])
+
+# Step 3: Find the built wheel file
+import glob
+dist_files = glob.glob("dist/*.whl")
+if not dist_files:
+    raise FileNotFoundError("No .whl file found in dist directory")
+
+# Step 4: Install the built package
+run_command([sys.executable, "-m", "pip", "install", dist_files[0]])
+
+# Step 5: Install npm dependencies
 try:
-    result = subprocess.run(
-        ["sudo", "npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    print(result.stdout.decode())
-    print(result.stderr.decode())
-except subprocess.CalledProcessError as e:
-    print(f"An error occurred: {e}")
-    print(e.stdout.decode())
-    print(e.stderr.decode())
+    run_command(["sudo", "npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
+except subprocess.CalledProcessError:
+    print("Failed to install npm dependencies. Please check the error messages above.")
+    sys.exit(1)  # Exit if the command fails
+
 
 
 ### chatgpt solution to install the foodwebviz code  
