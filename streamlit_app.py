@@ -7,7 +7,7 @@ import plotly.express as px
 import subprocess
 import sys
 
-subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
+#subprocess.run(["npm", "install", "-g", "electron@6.1.4", "orca", "--unsafe-perm=true"])
 subprocess.run([f"{sys.executable}", "setup.py"])
 
 #######################
