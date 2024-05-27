@@ -74,7 +74,7 @@ def load_or_query_re3data(file_path):
     """
     Load repository metadata from a file or query the re3data API if the file does not exist.
 
-    This function checks if a dump file with serialized XML content exists at "file_path".
+    This function checks if a dump file with serialized XML content exists at 'file_path'.
     If the file exists, it loads the XML data from the file. If the file does not exist, it fetches
     the metadata from the re3data API, serializes the XML data, and saves it to the file at 'file_path'.
 
@@ -82,10 +82,10 @@ def load_or_query_re3data(file_path):
     file_path (str): The path to the file where the serialized XML content is stored or will be saved.
 
     Returns:
-    list of lxml.html.HtmlElement: A list of parsed XML objects representing the repository metadata.
+    list of str: A list of serialized XML strings representing the repository metadata.
 
     Usage:
-    file_path = "re3data_repo_dump"
+    file_path = "./data/re3data_repo_dump"
     data = load_or_query_re3data(file_path)
     """
     
@@ -96,8 +96,7 @@ def load_or_query_re3data(file_path):
         # Load the list of XML content from the file
         with open(file_path, 'rb') as f:
             xml_strings = pickle.load(f)
-        # Convert strings back to XML objects
-        results = [html.fromstring(xml_str.encode('utf-8')) for xml_str in xml_strings]
+        results = xml_strings  # Already serialized XML strings
         print("Loaded data from the dump file.")
     else:
         # If the file does not exist, run the harvesting code
@@ -111,14 +110,11 @@ def load_or_query_re3data(file_path):
             for url in urls:
                 repository_metadata_response = client.get(url)
                 repository_metadata_xml = html.fromstring(repository_metadata_response.content)
-                results.append(repository_metadata_xml)
-
-        # Convert XML objects to strings for serialization
-        xml_strings = [etree.tostring(xml_obj).decode('utf-8') for xml_obj in results]
+                results.append(etree.tostring(repository_metadata_xml).decode('utf-8'))
 
         # Save the serialized XML strings to a file
         with open(file_path, 'wb') as f:
-            pickle.dump(xml_strings, f)
+            pickle.dump(results, f)
         print(f"Harvested data and saved to {file_path}.")
 
     return results
@@ -130,13 +126,25 @@ re3data_xml_dump = load_or_query_re3data("./data/re3data_repo_dump")
 
 @st.cache_data
 def parse_query_results_into_df(query_results):
+    """
+    Parse the query results into a pandas DataFrame.
+
+    This function takes a list of serialized XML strings, converts them back into
+    XML elements, and then extracts the repository information to construct a DataFrame.
+
+    Parameters:
+    query_results (list of str): A list of serialized XML strings representing the repository metadata.
+
+    Returns:
+    pandas.DataFrame: A DataFrame containing the parsed repository information.
+    """
     parsed_entries = []
 
-    for xml in query_results:
-        parsed_entries.append(extract_repository_info(xml))
+    for xml_str in query_results:
+        xml_element = html.fromstring(xml_str)
+        parsed_entries.append(extract_repository_info(xml_element))
 
-    return pandas.DataFrame(parsed_entries)
-
+    return pd.DataFrame(parsed_entries)
 
 pd_parsed = parse_query_results_into_df(re3data_xml_dump)
 
