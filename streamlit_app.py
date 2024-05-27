@@ -32,7 +32,7 @@ alt.themes.enable("dark")
 
 #######################
 # Load data (old stuff)
-#df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
+df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 #
 #selected_color_theme = "blues"
 #selected_year = 2018
