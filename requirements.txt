@@ -11,3 +11,6 @@ streamlit-tree-select
 
 lxml==4.8.0
 ipywidgets
+
+
+httpx
