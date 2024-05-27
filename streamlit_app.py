@@ -29,29 +29,135 @@ alt.themes.enable("dark")
 
 
 #######################
-# Load data
-df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
+# Load data (old stuff)
+#df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
+#
+#selected_color_theme = "blues"
+#selected_year = 2018
 
-selected_color_theme = "blues"
-selected_year = 2018
+### define what information about the repositories should be requested
+def safe_get_first(xpath_result):
+    """Safely get the first item from the XPath result or return None if empty."""
+    return xpath_result[0] if xpath_result else None
+
+
+def extract_repository_info(
+    repository_metadata_xml: html.HtmlElement,
+) -> typing.Dict[str, typing.Any]:
+    """Extracts wanted metadata elements from a given repository metadata xml representation.
+
+    Args:
+        repository_metadata_xml: XML representation of repository metadata.
+
+    Returns:
+        Dictionary representation of repository metadata.
+
+    """
+
+    namespaces = {"r3d": "http://www.re3data.org/schema/2-2"}
+    return {
+        "re3data_id": repository_metadata_xml.xpath("//re3data.orgidentifier/text()", namespaces=namespaces)[0],  ## put the '[0]' if I know there is to be exactly one element
+        "name": repository_metadata_xml.xpath("//repositoryname/text()", namespaces=namespaces)[0],
+        "type": repository_metadata_xml.xpath("//type/text()", namespaces=namespaces),
+        "identifier": repository_metadata_xml.xpath("//repositoryidentifier/text()", namespaces=namespaces),
+        "url": safe_get_first(repository_metadata_xml.xpath("//repositoryurl/text()", namespaces=namespaces)), ## use this function if ur not sure if there is an element
+        "subjects": repository_metadata_xml.xpath("//subject/text()", namespaces=namespaces),
+        "keywords": repository_metadata_xml.xpath("//keyword/text()", namespaces=namespaces),
+        "metadataStandards": repository_metadata_xml.xpath("//metadatastandardname/text()", namespaces=namespaces)
+    }
+
+
+@st.cache_data
+def load_or_query_re3data(file_path):
+    """
+    Load repository metadata from a file or query the re3data API if the file does not exist.
+
+    This function checks if a dump file with serialized XML content exists at "file_path".
+    If the file exists, it loads the XML data from the file. If the file does not exist, it fetches
+    the metadata from the re3data API, serializes the XML data, and saves it to the file at 'file_path'.
+
+    Parameters:
+    file_path (str): The path to the file where the serialized XML content is stored or will be saved.
+
+    Returns:
+    list of lxml.html.HtmlElement: A list of parsed XML objects representing the repository metadata.
+
+    Usage:
+    file_path = "re3data_repo_dump"
+    data = load_or_query_re3data(file_path)
+    """
+    
+    results = []
+
+    # Check if the dump file already exists
+    if os.path.exists(file_path):
+        # Load the list of XML content from the file
+        with open(file_path, 'rb') as f:
+            xml_strings = pickle.load(f)
+        # Convert strings back to XML objects
+        results = [html.fromstring(xml_str.encode('utf-8')) for xml_str in xml_strings]
+        print("Loaded data from the dump file.")
+    else:
+        # If the file does not exist, run the harvesting code
+
+        # Obtain URLs for further API queries
+        URL = "https://www.re3data.org/api/beta/repositories"
+        re3data_response = httpx.get(URL, timeout=60)
+        urls = html.fromstring(re3data_response.content).xpath("//@href")
+
+        with httpx.Client() as client:
+            for url in urls:
+                repository_metadata_response = client.get(url)
+                repository_metadata_xml = html.fromstring(repository_metadata_response.content)
+                results.append(repository_metadata_xml)
+
+        # Convert XML objects to strings for serialization
+        xml_strings = [etree.tostring(xml_obj).decode('utf-8') for xml_obj in results]
+
+        # Save the serialized XML strings to a file
+        with open(file_path, 'wb') as f:
+            pickle.dump(xml_strings, f)
+        print(f"Harvested data and saved to {file_path}.")
+
+    return results
+
+# Usage example:
+results = load_or_query_re3data("re3data_repo_dump")
+
+######### Parse the dump
+
+@st.cache_data
+def parse_query_results_into_df(query_results):
+    parsed_entries = []
+
+    for xml in query_results:
+        parsed_entries.append(extract_repository_info(xml))
+
+    return pandas.DataFrame(parsed_entries)
+
+
+pd_parsed = parse_query_results_into_df(results)
+
+
+
 
 #######################
+### re3data stuff
+
+
+
+
+
+
+#######################
+
 # Sidebar
 with st.sidebar:
     #st.title('🏂 US Population Dashboard')
     st.title("🐙 Streamlit-tree-select")
     st.subheader("A simple and elegant checkbox tree for Streamlit.")
-    
-    year_list = list(df_reshaped.year.unique())[::-1]
-    
-    de_selected_year = 2014
-    df_selected_year = df_reshaped[df_reshaped.year == de_selected_year]
-    df_selected_year_sorted = df_selected_year.sort_values(by="population", ascending=False)
 
-    color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
-    de_selected_color_theme = 'blues'
-
-
+    st.metric(label="# of selected repos:", value=pd_parsed.shape[0], delta=(3216-pd_parsed.shape[0]))
 
     # Create nodes to display
     nodes = [
