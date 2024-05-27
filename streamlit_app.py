@@ -17,6 +17,8 @@ import pickle
 from streamlit_tree_select import tree_select
 
 
+
+
 #######################
 # Page configuration
 st.set_page_config(
@@ -122,7 +124,7 @@ def load_or_query_re3data(file_path):
     return results
 
 # Usage example:
-results = load_or_query_re3data("re3data_repo_dump")
+re3data_xml_dump = load_or_query_re3data("./data/re3data_repo_dump")
 
 ######### Parse the dump
 
@@ -136,7 +138,7 @@ def parse_query_results_into_df(query_results):
     return pandas.DataFrame(parsed_entries)
 
 
-pd_parsed = parse_query_results_into_df(results)
+pd_parsed = parse_query_results_into_df(re3data_xml_dump)
 
 
 
