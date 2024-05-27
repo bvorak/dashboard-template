@@ -430,7 +430,7 @@ with col[1]:
     heatmap = make_heatmap(df_reshaped, 'year', 'states', 'population', selected_color_theme)
     st.altair_chart(heatmap, use_container_width=True)
     
-
+""" 
 with col[2]:
     st.markdown('#### Top States')
 
@@ -456,3 +456,4 @@ with col[2]:
             - :orange[**Gains/Losses**]: states with high inbound/ outbound migration for selected year
             - :orange[**States Migration**]: percentage of states with annual inbound/ outbound migration > 50,000
             ''')
+ """
