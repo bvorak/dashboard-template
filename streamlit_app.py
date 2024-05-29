@@ -146,11 +146,125 @@ def parse_query_results_into_df(query_results):
 
     return pd.DataFrame(parsed_entries)
 
+
+def extract_subjects_hierarchy(pd_grouped):
+    """
+    Extracts numeric codes, descriptions, and hierarchical structure from the 'subjects' column
+    in the input DataFrame.
+    
+    Parameters:
+    pd_grouped (pd.DataFrame): Input DataFrame with a 'subjects' column.
+
+    Returns:
+    pd.DataFrame: DataFrame with 'subjects', 'description', and 'hierarchy' columns.
+    """
+    if 'subjects' not in pd_grouped.columns:
+        raise ValueError("The DataFrame does not contain a 'subjects' column.")
+    
+    try:
+        # Extract numeric codes and descriptions with a check for formatting
+        pd_grouped['code'] = pd_grouped['subjects'].apply(lambda x: x.split(' ')[0] if ' ' in x else None)
+        pd_grouped['description'] = pd_grouped['subjects'].apply(lambda x: ' '.join(x.split(' ')[1:]) if ' ' in x else None)
+
+        # Check if any rows failed to split
+        if pd_grouped['code'].isnull().any() or pd_grouped['description'].isnull().any():
+            print("Some entries in 'subjects' may not follow the expected format.")
+
+        # Define a function to parse hierarchical levels based on new specifications
+        def parse_hierarchy(code):
+            if code is not None:
+                # Assuming the code is at least two characters long
+                hierarchy = []
+                if len(code) >= 1:
+                    hierarchy.append(code[:1])
+                if len(code) >= 3:
+                    hierarchy.append(code[:1] + '-' + code[1:3])
+                if len(code) >= 5:
+                    hierarchy.append(code[:1] + '-' + code[1:3] + '-' + code[3:5])
+                return hierarchy
+            return []
+
+        # Apply the function to create hierarchy
+        pd_grouped['hierarchy'] = pd_grouped['code'].apply(parse_hierarchy)
+        
+        return pd_grouped
+
+    except Exception as e:
+        raise ValueError(f"Error during processing: {e}")
+    
+
+# Create a nested dictionary from the DataFrame rows
+def build_hierarchy_dict(dataframe):
+    """
+    Builds a hierarchical structure suitable for faceted dropdowns from the DataFrame rows.
+
+    Parameters:
+    dataframe (pd.DataFrame): DataFrame with 'subjects', 'description', and 'hierarchy' columns.
+
+    Returns:
+    list: a dictionary representing the hierarchical structure.
+    """
+    root = {}
+    
+    for _, row in dataframe.iterrows():
+        current = root
+        path = row['hierarchy']
+        for i, level in enumerate(path):
+            if level not in current:
+                current[level] = {'sub': {}, 'level_placeholder': True}  # Mark as placeholder
+            if i == len(path) - 1:  # Last item in hierarchy
+                current[level]['description'] = row['description']
+                current[level]['value'] = f"{level} {row['description']}"
+                current[level]['label'] = f"{level} {row['description']}"
+                current[level]['level_placeholder'] = False  # Actual data, not a placeholder
+            current = current[level]['sub']
+    return root
+
+
+# convert the nested dictionary into a list of dictionaries suitable for tree_select drop_down
+@st.cache_data
+def dict_to_list(d):
+    result = []
+    for key, value in d.items():
+        node = {
+            'label': value.get('label', key),
+            'value': value.get('value', key)
+        }
+        children = dict_to_list(value['sub'])
+        if children:
+            node['children'] = children
+        result.append(node)
+    return result
+
+
+
+
+# Function to convert the nested dictionary to markdown
+def dict_to_markdown(d, indent=0):
+    markdown = ""
+    for key, value in sorted(d.items()):
+        # Determine whether to display placeholder
+        desc = value['description'] if 'description' in value else f"Level {key}"
+        if 'level_placeholder' in value and not value['level_placeholder']:
+            markdown += '    ' * indent + f"- {desc}\n"
+        else:
+            markdown += '    ' * indent + f"- Level {key}\n"  # Only show level number if placeholder
+        # Recursive case
+        if value['sub']:  # if sub-dictionary exists and is not empty
+            markdown += dict_to_markdown(value['sub'], indent + 1)
+    return markdown
+
+
 pd_parsed = parse_query_results_into_df(re3data_xml_dump)
 
 
-pd_exploded = pd_parsed.explode("subjects")
-pd_grouped = pd_exploded.groupby(by="subjects").size().reset_index(name='counts')
+pd_exploded_subjects = pd_parsed.explode("subjects")
+pd_grouped_subjcts = pd_exploded_subjects.groupby(by="subjects").size().reset_index(name='counts')
+subject_counts_and_hierarchy_df = extract_subjects_hierarchy(pd_grouped_subjcts)
+subject_hierarchy_dict = build_hierarchy_dict(subject_counts_and_hierarchy_df)
+subject_hierarchy_md = dict_to_markdown(subject_hierarchy_dict)
+subject_hierarchy_list = dict_to_list(subject_hierarchy_dict)
+
 
 
 
@@ -172,463 +286,8 @@ with st.sidebar:
 
     st.metric(label="# of selected repos:", value=pd_parsed.shape[0], delta=(pd_parsed.shape[0]-3216))
 
-    # Create nodes to display
-    nodes = [{'label': '1 Social and Behavioural Sciences',
-  'value': '1 Social and Behavioural Sciences',
-  'children': [{'label': '1-01 Ancient Cultures',
-    'value': '1-01 Ancient Cultures',
-    'children': [{'label': '1-01-01 Prehistory',
-      'value': '1-01-01 Prehistory'},
-     {'label': '1-01-02 Classical Philology',
-      'value': '1-01-02 Classical Philology'},
-     {'label': '1-01-03 Ancient History', 'value': '1-01-03 Ancient History'},
-     {'label': '1-01-04 Classical Archaeology',
-      'value': '1-01-04 Classical Archaeology'},
-     {'label': '1-01-05 Egyptology and Ancient Near Eastern Studies',
-      'value': '1-01-05 Egyptology and Ancient Near Eastern Studies'}]},
-   {'label': '1-02 History',
-    'value': '1-02 History',
-    'children': [{'label': '1-02-01 Medieval History',
-      'value': '1-02-01 Medieval History'},
-     {'label': '1-02-02 Early Modern History',
-      'value': '1-02-02 Early Modern History'},
-     {'label': '1-02-03 Modern and Current History',
-      'value': '1-02-03 Modern and Current History'},
-     {'label': '1-02-04 History of Science',
-      'value': '1-02-04 History of Science'}]},
-   {'label': '1-03 Fine Arts, Music, Theatre and Media Studies',
-    'value': '1-03 Fine Arts, Music, Theatre and Media Studies',
-    'children': [{'label': '1-03-01 Art History',
-      'value': '1-03-01 Art History'},
-     {'label': '1-03-02 Musicology', 'value': '1-03-02 Musicology'},
-     {'label': '1-03-03 Theatre and Media Studies',
-      'value': '1-03-03 Theatre and Media Studies'}]},
-   {'label': '1-04 Linguistics',
-    'value': '1-04 Linguistics',
-    'children': [{'label': '1-04-01 General and Applied Linguistics',
-      'value': '1-04-01 General and Applied Linguistics'},
-     {'label': '1-04-02 Individual Linguistics',
-      'value': '1-04-02 Individual Linguistics'},
-     {'label': '1-04-03 Typology, Non-European Languages, Historical Linguistics',
-      'value': '1-04-03 Typology, Non-European Languages, Historical Linguistics'}]},
-   {'label': '1-05 Literary Studies',
-    'value': '1-05 Literary Studies',
-    'children': [{'label': '1-05-01 Medieval German Literature',
-      'value': '1-05-01 Medieval German Literature'},
-     {'label': '1-05-02 Modern German Literature',
-      'value': '1-05-02 Modern German Literature'},
-     {'label': '1-05-03 European and American Literature',
-      'value': '1-05-03 European and American Literature'},
-     {'label': '1-05-04 General and Comparative Literature and Cultural Studies',
-      'value': '1-05-04 General and Comparative Literature and Cultural Studies'}]},
-   {'label': '1-06 Non-European Languages and Cultures, Social and Cultural Anthropology, Jewish Studies and Religious Studies',
-    'value': '1-06 Non-European Languages and Cultures, Social and Cultural Anthropology, Jewish Studies and Religious Studies',
-    'children': [{'label': '1-06-01 Social and Cultural Anthropology and Ethnology/Folklore',
-      'value': '1-06-01 Social and Cultural Anthropology and Ethnology/Folklore'},
-     {'label': '1-06-02 Asian Studies', 'value': '1-06-02 Asian Studies'},
-     {'label': '1-06-03 African, American and Oceania Studies',
-      'value': '1-06-03 African, American and Oceania Studies'},
-     {'label': '1-06-04 Islamic Studies, Arabian Studies, Semitic Studies',
-      'value': '1-06-04 Islamic Studies, Arabian Studies, Semitic Studies'},
-     {'label': '1-06-05 Religious Studies and Jewish Studies',
-      'value': '1-06-05 Religious Studies and Jewish Studies'}]},
-   {'label': '1-07 Theology',
-    'value': '1-07 Theology',
-    'children': [{'label': '1-07-01 Protestant Theology',
-      'value': '1-07-01 Protestant Theology'},
-     {'label': '1-07-02 Roman Catholic Theology',
-      'value': '1-07-02 Roman Catholic Theology'}]},
-   {'label': '1-08 Philosophy',
-    'value': '1-08 Philosophy',
-    'children': [{'label': '1-08-01 History of Philosophy',
-      'value': '1-08-01 History of Philosophy'}]},
-   {'label': '1-09 Education Sciences',
-    'value': '1-09 Education Sciences',
-    'children': [{'label': '1-09-01 General Education and History of Education',
-      'value': '1-09-01 General Education and History of Education'},
-     {'label': '1-09-02 Research on Teaching, Learning and Training',
-      'value': '1-09-02 Research on Teaching, Learning and Training'},
-     {'label': '1-09-03 Research on Socialization and Educational Institutions and Professions',
-      'value': '1-09-03 Research on Socialization and Educational Institutions and Professions'}]},
-   {'label': '1-10 Psychology',
-    'value': '1-10 Psychology',
-    'children': [{'label': '1-10-01 General, Biological and Mathematical Psychology',
-      'value': '1-10-01 General, Biological and Mathematical Psychology'},
-     {'label': '1-10-02 Developmental and Educational Psychology',
-      'value': '1-10-02 Developmental and Educational Psychology'},
-     {'label': '1-10-03 Social Psychology, Industrial and Organisational Psychology',
-      'value': '1-10-03 Social Psychology, Industrial and Organisational Psychology'},
-     {'label': '1-10-04 Differential Psychology, Clinical Psychology, Medical Psychology, Methodology',
-      'value': '1-10-04 Differential Psychology, Clinical Psychology, Medical Psychology, Methodology'}]},
-   {'label': '1-11 Social Sciences',
-    'value': '1-11 Social Sciences',
-    'children': [{'label': '1-11-01 Sociological Theory',
-      'value': '1-11-01 Sociological Theory'},
-     {'label': '1-11-02 Empirical Social Research',
-      'value': '1-11-02 Empirical Social Research'},
-     {'label': '1-11-03 Communication Science',
-      'value': '1-11-03 Communication Science'},
-     {'label': '1-11-04 Political Science',
-      'value': '1-11-04 Political Science'}]},
-   {'label': '1-12 Economics',
-    'value': '1-12 Economics',
-    'children': [{'label': '1-12-01 Economic Theory',
-      'value': '1-12-01 Economic Theory'},
-     {'label': '1-12-02 Economic and Social Policy',
-      'value': '1-12-02 Economic and Social Policy'},
-     {'label': '1-12-03 Public Finance', 'value': '1-12-03 Public Finance'},
-     {'label': '1-12-04 Business Administration',
-      'value': '1-12-04 Business Administration'},
-     {'label': '1-12-05 Statistics and Econometrics',
-      'value': '1-12-05 Statistics and Econometrics'},
-     {'label': '1-12-06 Economic and Social History',
-      'value': '1-12-06 Economic and Social History'}]},
-   {'label': '1-13 Jurisprudence',
-    'value': '1-13 Jurisprudence',
-    'children': [{'label': '1-13-01 Legal and Political Philosophy, Legal History, Legal Theory',
-      'value': '1-13-01 Legal and Political Philosophy, Legal History, Legal Theory'},
-     {'label': '1-13-02 Private Law', 'value': '1-13-02 Private Law'},
-     {'label': '1-13-03 Public Law', 'value': '1-13-03 Public Law'},
-     {'label': '1-13-04 Criminal Law and Law of Criminal Procedure',
-      'value': '1-13-04 Criminal Law and Law of Criminal Procedure'},
-     {'label': '1-13-05 Criminology', 'value': '1-13-05 Criminology'}]}]},
- {'label': '2 Agriculture, Forestry, Horticulture and Veterinary Medicine',
-  'value': '2 Agriculture, Forestry, Horticulture and Veterinary Medicine',
-  'children': [{'label': '2-01 Basic Biological and Medical Research',
-    'value': '2-01 Basic Biological and Medical Research',
-    'children': [{'label': '2-01-01 Biochemistry',
-      'value': '2-01-01 Biochemistry'},
-     {'label': '2-01-02 Biophysics', 'value': '2-01-02 Biophysics'},
-     {'label': '2-01-03 Cell Biology', 'value': '2-01-03 Cell Biology'},
-     {'label': '2-01-04 Structural Biology',
-      'value': '2-01-04 Structural Biology'},
-     {'label': '2-01-05 General Genetics',
-      'value': '2-01-05 General Genetics'},
-     {'label': '2-01-06 Developmental Biology',
-      'value': '2-01-06 Developmental Biology'},
-     {'label': '2-01-07 Bioinformatics and Theoretical Biology',
-      'value': '2-01-07 Bioinformatics and Theoretical Biology'},
-     {'label': '2-01-08 Anatomy', 'value': '2-01-08 Anatomy'}]},
-   {'label': '2-02 Plant Sciences',
-    'value': '2-02 Plant Sciences',
-    'children': [{'label': '2-02-01 Plant Systematics and Evolution',
-      'value': '2-02-01 Plant Systematics and Evolution'},
-     {'label': '2-02-02 Plant Ecology and Ecosystem Analysis',
-      'value': '2-02-02 Plant Ecology and Ecosystem Analysis'},
-     {'label': '2-02-03 Inter-organismic Interactions of Plants',
-      'value': '2-02-03 Inter-organismic Interactions of Plants'},
-     {'label': '2-02-04 Plant Physiology',
-      'value': '2-02-04 Plant Physiology'},
-     {'label': '2-02-05 Plant Biochemistry and Biophysics',
-      'value': '2-02-05 Plant Biochemistry and Biophysics'},
-     {'label': '2-02-06 Plant Cell and Developmental Biology',
-      'value': '2-02-06 Plant Cell and Developmental Biology'},
-     {'label': '2-02-07 Plant Genetics', 'value': '2-02-07 Plant Genetics'}]},
-   {'label': '2-03 Zoology',
-    'value': '2-03 Zoology',
-    'children': [{'label': '2-03-01 Systematics and Morphology',
-      'value': '2-03-01 Systematics and Morphology'},
-     {'label': '2-03-02 Evolution, Anthropology',
-      'value': '2-03-02 Evolution, Anthropology'},
-     {'label': '2-03-03 Animal Ecology, Biodiversity and Ecosystem Research',
-      'value': '2-03-03 Animal Ecology, Biodiversity and Ecosystem Research'},
-     {'label': '2-03-04 Sensory and Behavioural Biology',
-      'value': '2-03-04 Sensory and Behavioural Biology'},
-     {'label': '2-03-05 Biochemistry and Animal Physiology',
-      'value': '2-03-05 Biochemistry and Animal Physiology'},
-     {'label': '2-03-06 Animal Genetics, Cell and Developmental Biology',
-      'value': '2-03-06 Animal Genetics, Cell and Developmental Biology'}]},
-   {'label': '2-04 Microbiology, Virology and Immunology',
-    'value': '2-04 Microbiology, Virology and Immunology',
-    'children': [{'label': '2-04-01 Metabolism, Biochemistry and Genetics of Microorganisms',
-      'value': '2-04-01 Metabolism, Biochemistry and Genetics of Microorganisms'},
-     {'label': '2-04-02 Microbial Ecology and Applied Microbiology',
-      'value': '2-04-02 Microbial Ecology and Applied Microbiology'},
-     {'label': '2-04-03 Medical Microbiology, Molecular Infection Biology',
-      'value': '2-04-03 Medical Microbiology, Molecular Infection Biology'},
-     {'label': '2-04-04 Virology', 'value': '2-04-04 Virology'},
-     {'label': '2-04-05 Immunology', 'value': '2-04-05 Immunology'}]},
-   {'label': '2-05 Medicine',
-    'value': '2-05 Medicine',
-    'children': [{'label': '2-05-01 Epidemiology, Medical Biometry, Medical Informatics',
-      'value': '2-05-01 Epidemiology, Medical Biometry, Medical Informatics'},
-     {'label': '2-05-02 Public Health, Health Services Research, Social Medicine',
-      'value': '2-05-02 Public Health, Health Services Research, Social Medicine'},
-     {'label': '2-05-03 Human Genetics', 'value': '2-05-03 Human Genetics'},
-     {'label': '2-05-04 Physiology', 'value': '2-05-04 Physiology'},
-     {'label': '2-05-05 Nutritional Sciences',
-      'value': '2-05-05 Nutritional Sciences'},
-     {'label': '2-05-06 Pathology and Forensic Medicine',
-      'value': '2-05-06 Pathology and Forensic Medicine'},
-     {'label': '2-05-07 Clinical Chemistry and Pathobiochemistry',
-      'value': '2-05-07 Clinical Chemistry and Pathobiochemistry'},
-     {'label': '2-05-08 Pharmacy', 'value': '2-05-08 Pharmacy'},
-     {'label': '2-05-09 Pharmacology', 'value': '2-05-09 Pharmacology'},
-     {'label': '2-05-10 Toxicology and Occupational Medicine',
-      'value': '2-05-10 Toxicology and Occupational Medicine'},
-     {'label': '2-05-12 Cardiology, Angiology',
-      'value': '2-05-12 Cardiology, Angiology'},
-     {'label': '2-05-13 Pneumology, Clinical Infectiology Intensive Care Medicine',
-      'value': '2-05-13 Pneumology, Clinical Infectiology Intensive Care Medicine'},
-     {'label': '2-05-14 Hematology, Oncology, Transfusion Medicine',
-      'value': '2-05-14 Hematology, Oncology, Transfusion Medicine'},
-     {'label': '2-05-15 Gastroenterology, Metabolism',
-      'value': '2-05-15 Gastroenterology, Metabolism'},
-     {'label': '2-05-16 Nephrology', 'value': '2-05-16 Nephrology'},
-     {'label': '2-05-17 Endocrinology, Diabetology',
-      'value': '2-05-17 Endocrinology, Diabetology'},
-     {'label': '2-05-18 Rheumatology, Clinical Immunology, Allergology',
-      'value': '2-05-18 Rheumatology, Clinical Immunology, Allergology'},
-     {'label': '2-05-19 Dermatology', 'value': '2-05-19 Dermatology'},
-     {'label': '2-05-20 Pediatric and Adolescent Medicine',
-      'value': '2-05-20 Pediatric and Adolescent Medicine'},
-     {'label': '2-05-21 Gynaecology and Obstetrics',
-      'value': '2-05-21 Gynaecology and Obstetrics'},
-     {'label': '2-05-22 Reproductive Medicine/Biology',
-      'value': '2-05-22 Reproductive Medicine/Biology'},
-     {'label': '2-05-23 Urology', 'value': '2-05-23 Urology'},
-     {'label': '2-05-24 Gerontology and Geriatric Medicine',
-      'value': '2-05-24 Gerontology and Geriatric Medicine'},
-     {'label': '2-05-26 Cardiothoracic Surgery',
-      'value': '2-05-26 Cardiothoracic Surgery'},
-     {'label': '2-05-27 Traumatology and Orthopaedics',
-      'value': '2-05-27 Traumatology and Orthopaedics'},
-     {'label': '2-05-28 Dentistry, Oral Surgery',
-      'value': '2-05-28 Dentistry, Oral Surgery'},
-     {'label': '2-05-30 Radiology and Nuclear Medicine',
-      'value': '2-05-30 Radiology and Nuclear Medicine'},
-     {'label': '2-05-31 Radiation Oncology and Radiobiology',
-      'value': '2-05-31 Radiation Oncology and Radiobiology'},
-     {'label': '2-05-32 Biomedical Technology and Medical Physics',
-      'value': '2-05-32 Biomedical Technology and Medical Physics'}]},
-   {'label': '2-06 Neurosciences',
-    'value': '2-06 Neurosciences',
-    'children': [{'label': '2-06-01 Molecular Neuroscience and Neurogenetics',
-      'value': '2-06-01 Molecular Neuroscience and Neurogenetics'},
-     {'label': '2-06-02 Cellular Neuroscience',
-      'value': '2-06-02 Cellular Neuroscience'},
-     {'label': '2-06-03 Developmental Neurobiology',
-      'value': '2-06-03 Developmental Neurobiology'},
-     {'label': '2-06-04 Systemic Neuroscience, Computational Neuroscience, Behaviour',
-      'value': '2-06-04 Systemic Neuroscience, Computational Neuroscience, Behaviour'},
-     {'label': '2-06-05 Comparative Neurobiology',
-      'value': '2-06-05 Comparative Neurobiology'},
-     {'label': '2-06-06 Cognitive Neuroscience and Neuroimaging',
-      'value': '2-06-06 Cognitive Neuroscience and Neuroimaging'},
-     {'label': '2-06-07 Molecular Neurology',
-      'value': '2-06-07 Molecular Neurology'},
-     {'label': '2-06-08 Clinical Neurosciences I - Neurology, Neurosurgery',
-      'value': '2-06-08 Clinical Neurosciences I - Neurology, Neurosurgery'},
-     {'label': '2-06-09 Biological Psychiatry',
-      'value': '2-06-09 Biological Psychiatry'},
-     {'label': '2-06-10 Clinical Neurosciences II - Psychotherapy, Psychosomatic Medicine',
-      'value': '2-06-10 Clinical Neurosciences II - Psychotherapy, Psychosomatic Medicine'},
-     {'label': '2-06-11 Clinical Neurosciences III - Ophthalmology',
-      'value': '2-06-11 Clinical Neurosciences III - Ophthalmology'}]},
-   {'label': '2-07 Agriculture, Forestry, Horticulture and Veterinary Medicine',
-    'value': '2-07 Agriculture, Forestry, Horticulture and Veterinary Medicine',
-    'children': [{'label': '2-07-01 Soil Sciences',
-      'value': '2-07-01 Soil Sciences'},
-     {'label': '2-07-02 Plant Cultivation',
-      'value': '2-07-02 Plant Cultivation'},
-     {'label': '2-07-03 Plant Nutrition', 'value': '2-07-03 Plant Nutrition'},
-     {'label': '2-07-04 Ecology of Agricultural Landscapes',
-      'value': '2-07-04 Ecology of Agricultural Landscapes'},
-     {'label': '2-07-05 Plant Breeding', 'value': '2-07-05 Plant Breeding'},
-     {'label': '2-07-07 Agricultural and Food Process Engineering',
-      'value': '2-07-07 Agricultural and Food Process Engineering'},
-     {'label': '2-07-08 Agricultural Economics and Sociology',
-      'value': '2-07-08 Agricultural Economics and Sociology'},
-     {'label': '2-07-09 Inventory Control and Use of Forest Resources',
-      'value': '2-07-09 Inventory Control and Use of Forest Resources'},
-     {'label': '2-07-10 Basic Forest Research',
-      'value': '2-07-10 Basic Forest Research'},
-     {'label': '2-07-11 Animal Husbandry, Breeding and Hygiene',
-      'value': '2-07-11 Animal Husbandry, Breeding and Hygiene'},
-     {'label': '2-07-13 Basic Veterinary Medical Science',
-      'value': '2-07-13 Basic Veterinary Medical Science'},
-     {'label': '2-07-14 Basic Research on Pathogenesis, Diagnostics and Therapy and Clinical Veterinary Medicine',
-      'value': '2-07-14 Basic Research on Pathogenesis, Diagnostics and Therapy and Clinical Veterinary Medicine'}]}]},
- {'label': '3 Geosciences (including Geography)',
-  'value': '3 Geosciences (including Geography)',
-  'children': [{'label': '3-01 Molecular Chemistry',
-    'value': '3-01 Molecular Chemistry',
-    'children': [{'label': '3-01-01 Inorganic Molecular Chemistry',
-      'value': '3-01-01 Inorganic Molecular Chemistry'},
-     {'label': '3-01-02 Organic Molecular Chemistry',
-      'value': '3-01-02 Organic Molecular Chemistry'}]},
-   {'label': '3-02 Chemical Solid State and Surface Research',
-    'value': '3-02 Chemical Solid State and Surface Research',
-    'children': [{'label': '3-02-01 Solid State and Surface Chemistry, Material Synthesis',
-      'value': '3-02-01 Solid State and Surface Chemistry, Material Synthesis'},
-     {'label': '3-02-02 Physical Chemistry of Solids and Surfaces, Material Characterisation',
-      'value': '3-02-02 Physical Chemistry of Solids and Surfaces, Material Characterisation'},
-     {'label': '3-02-03 Theory and Modelling',
-      'value': '3-02-03 Theory and Modelling'}]},
-   {'label': '3-03 Physical and Theoretical Chemistry',
-    'value': '3-03 Physical and Theoretical Chemistry',
-    'children': [{'label': '3-03-01 Physical Chemistry of Molecules, Interfaces and Liquids - Spectroscopy, Kinetics',
-      'value': '3-03-01 Physical Chemistry of Molecules, Interfaces and Liquids - Spectroscopy, Kinetics'},
-     {'label': '3-03-02 General Theoretical Chemistry',
-      'value': '3-03-02 General Theoretical Chemistry'}]},
-   {'label': '3-04 Analytical Chemistry, Method Development (Chemistry)',
-    'value': '3-04 Analytical Chemistry, Method Development (Chemistry)',
-    'children': [{'label': '3-04-01 Analytical Chemistry, Method Development (Chemistry)',
-      'value': '3-04-01 Analytical Chemistry, Method Development (Chemistry)'}]},
-   {'label': '3-05 Biological Chemistry and Food Chemistry',
-    'value': '3-05 Biological Chemistry and Food Chemistry',
-    'children': [{'label': '3-05-01 Biological and Biomimetic Chemistry',
-      'value': '3-05-01 Biological and Biomimetic Chemistry'},
-     {'label': '3-05-02 Food Chemistry', 'value': '3-05-02 Food Chemistry'}]},
-   {'label': '3-06 Polymer Research',
-    'value': '3-06 Polymer Research',
-    'children': [{'label': '3-06-01 Preparatory and Physical Chemistry of Polymers',
-      'value': '3-06-01 Preparatory and Physical Chemistry of Polymers'},
-     {'label': '3-06-02 Experimental and Theoretical Physics of Polymers',
-      'value': '3-06-02 Experimental and Theoretical Physics of Polymers'},
-     {'label': '3-06-03 Polymer Materials',
-      'value': '3-06-03 Polymer Materials'}]},
-   {'label': '3-07 Condensed Matter Physics',
-    'value': '3-07 Condensed Matter Physics',
-    'children': [{'label': '3-07-01 Experimental Condensed Matter Physics',
-      'value': '3-07-01 Experimental Condensed Matter Physics'},
-     {'label': '3-07-02 Theoretical Condensed Matter Physics',
-      'value': '3-07-02 Theoretical Condensed Matter Physics'}]},
-   {'label': '3-08 Optics, Quantum Optics and Physics of Atoms, Molecules and Plasmas',
-    'value': '3-08 Optics, Quantum Optics and Physics of Atoms, Molecules and Plasmas',
-    'children': [{'label': '3-08-01 Optics, Quantum Optics, Atoms, Molecules, Plasmas',
-      'value': '3-08-01 Optics, Quantum Optics, Atoms, Molecules, Plasmas'}]},
-   {'label': '3-09 Particles, Nuclei and Fields',
-    'value': '3-09 Particles, Nuclei and Fields',
-    'children': [{'label': '3-09-01 Particles, Nuclei and Fields',
-      'value': '3-09-01 Particles, Nuclei and Fields'}]},
-   {'label': '3-10 Statistical Physics, Soft Matter, Biological Physics, Nonlinear Dynamics',
-    'value': '3-10 Statistical Physics, Soft Matter, Biological Physics, Nonlinear Dynamics',
-    'children': [{'label': '3-10-01 Statistical Physics, Soft Matter, Biological Physics, Nonlinear Dynamics',
-      'value': '3-10-01 Statistical Physics, Soft Matter, Biological Physics, Nonlinear Dynamics'}]},
-   {'label': '3-11 Astrophysics and Astronomy',
-    'value': '3-11 Astrophysics and Astronomy',
-    'children': [{'label': '3-11-01 Astrophysics and Astronomy',
-      'value': '3-11-01 Astrophysics and Astronomy'}]},
-   {'label': '3-12 Mathematics',
-    'value': '3-12 Mathematics',
-    'children': [{'label': '3-12-01 Mathematics',
-      'value': '3-12-01 Mathematics'}]},
-   {'label': '3-13 Atmospheric Science and Oceanography',
-    'value': '3-13 Atmospheric Science and Oceanography',
-    'children': [{'label': '3-13-01 Atmospheric Science',
-      'value': '3-13-01 Atmospheric Science'},
-     {'label': '3-13-02 Oceanography', 'value': '3-13-02 Oceanography'}]},
-   {'label': '3-14 Geology and Palaeontology',
-    'value': '3-14 Geology and Palaeontology',
-    'children': [{'label': '3-14-01 Geology and Palaeontology',
-      'value': '3-14-01 Geology and Palaeontology'}]},
-   {'label': '3-15 Geophysics and Geodesy',
-    'value': '3-15 Geophysics and Geodesy',
-    'children': [{'label': '3-15-01 Geophysics',
-      'value': '3-15-01 Geophysics'},
-     {'label': '3-15-02 Geodesy, Photogrammetry, Remote Sensing, Geoinformatics, Cartogaphy',
-      'value': '3-15-02 Geodesy, Photogrammetry, Remote Sensing, Geoinformatics, Cartogaphy'}]},
-   {'label': '3-16 Geochemistry, Mineralogy and Crystallography',
-    'value': '3-16 Geochemistry, Mineralogy and Crystallography',
-    'children': [{'label': '3-16-01 Geochemistry, Mineralogy and Crystallography',
-      'value': '3-16-01 Geochemistry, Mineralogy and Crystallography'}]},
-   {'label': '3-17 Geography',
-    'value': '3-17 Geography',
-    'children': [{'label': '3-17-01 Physical Geography',
-      'value': '3-17-01 Physical Geography'},
-     {'label': '3-17-02 Human Geography',
-      'value': '3-17-02 Human Geography'}]},
-   {'label': '3-18 Water Research',
-    'value': '3-18 Water Research',
-    'children': [{'label': '3-18-01 Hydrogeology, Hydrology, Limnology, Urban Water Management, Water Chemistry, Integrated Water Resources Management',
-      'value': '3-18-01 Hydrogeology, Hydrology, Limnology, Urban Water Management, Water Chemistry, Integrated Water Resources Management'}]}]},
- {'label': '4 Construction Engineering and Architecture',
-  'value': '4 Construction Engineering and Architecture',
-  'children': [{'label': '4-01 Production Technology',
-    'value': '4-01 Production Technology',
-    'children': [{'label': '4-01-05 Production Automation, Factory Operation, Operations Manangement',
-      'value': '4-01-05 Production Automation, Factory Operation, Operations Manangement'}]},
-   {'label': '4-02 Mechanics and Constructive Mechanical Engineering',
-    'value': '4-02 Mechanics and Constructive Mechanical Engineering',
-    'children': [{'label': '4-02-04 Acoustics',
-      'value': '4-02-04 Acoustics'}]},
-   {'label': '4-03 Process Engineering, Technical Chemistry',
-    'value': '4-03 Process Engineering, Technical Chemistry',
-    'children': [{'label': '4-03-01 Chemical and Thermal Process Engineering',
-      'value': '4-03-01 Chemical and Thermal Process Engineering'},
-     {'label': '4-03-02 Technical Chemistry',
-      'value': '4-03-02 Technical Chemistry'},
-     {'label': '4-03-04 Biological Process Engineering',
-      'value': '4-03-04 Biological Process Engineering'}]},
-   {'label': '4-04 Heat Energy Technology, Thermal Machines, Fluid Mechanics',
-    'value': '4-04 Heat Energy Technology, Thermal Machines, Fluid Mechanics',
-    'children': [{'label': '4-04-01 Energy Process Engineering',
-      'value': '4-04-01 Energy Process Engineering'},
-     {'label': '4-04-02 Technical Thermodynamics',
-      'value': '4-04-02 Technical Thermodynamics'}]},
-   {'label': '4-05 Materials Engineering',
-    'value': '4-05 Materials Engineering',
-    'children': [{'label': '4-05-01 Metallurgical and Thermal Processes, Thermomechanical Treatment of Materials',
-      'value': '4-05-01 Metallurgical and Thermal Processes, Thermomechanical Treatment of Materials'},
-     {'label': '4-05-02 Sintered Metallic and Ceramic Materials',
-      'value': '4-05-02 Sintered Metallic and Ceramic Materials'},
-     {'label': '4-05-03 Composite Materials',
-      'value': '4-05-03 Composite Materials'},
-     {'label': '4-05-05 Coating and Surface Technology',
-      'value': '4-05-05 Coating and Surface Technology'}]},
-   {'label': '4-06 Materials Science',
-    'value': '4-06 Materials Science',
-    'children': [{'label': '4-06-01 Thermodynamics and Kinetics of Materials',
-      'value': '4-06-01 Thermodynamics and Kinetics of Materials'},
-     {'label': '4-06-02 Synthesis and Properties of Functional Materials',
-      'value': '4-06-02 Synthesis and Properties of Functional Materials'},
-     {'label': '4-06-03 Microstructural Mechanical Properties of Materials',
-      'value': '4-06-03 Microstructural Mechanical Properties of Materials'},
-     {'label': '4-06-04 Structuring and Functionalisation',
-      'value': '4-06-04 Structuring and Functionalisation'},
-     {'label': '4-06-05 Biomaterials', 'value': '4-06-05 Biomaterials'}]},
-   {'label': '4-07 Systems Engineering',
-    'value': '4-07 Systems Engineering',
-    'children': [{'label': '4-07-01 Automation, Control Systems, Robotics, Mechatronics',
-      'value': '4-07-01 Automation, Control Systems, Robotics, Mechatronics'},
-     {'label': '4-07-02 Measurement Systems',
-      'value': '4-07-02 Measurement Systems'},
-     {'label': '4-07-04 Traffic and Transport Systems, Logistics',
-      'value': '4-07-04 Traffic and Transport Systems, Logistics'},
-     {'label': '4-07-05 Human Factors, Ergonomics, Human-Machine Systems',
-      'value': '4-07-05 Human Factors, Ergonomics, Human-Machine Systems'}]},
-   {'label': '4-08 Electrical Engineering',
-    'value': '4-08 Electrical Engineering',
-    'children': [{'label': '4-08-01 Electronic Semiconductors, Components, Circuits, Systems',
-      'value': '4-08-01 Electronic Semiconductors, Components, Circuits, Systems'},
-     {'label': '4-08-02 Communication, High-Frequency and Network Technology, Theoretical Electrical Engineering',
-      'value': '4-08-02 Communication, High-Frequency and Network Technology, Theoretical Electrical Engineering'},
-     {'label': '4-08-03 Electrical Energy Generation, Distribution, Application',
-      'value': '4-08-03 Electrical Energy Generation, Distribution, Application'}]},
-   {'label': '4-09 Computer Science',
-    'value': '4-09 Computer Science',
-    'children': [{'label': '4-09-01 Theoretical Computer Science',
-      'value': '4-09-01 Theoretical Computer Science'},
-     {'label': '4-09-02 Software Technology',
-      'value': '4-09-02 Software Technology'},
-     {'label': '4-09-03 Operating, Communication and Information Systems',
-      'value': '4-09-03 Operating, Communication and Information Systems'},
-     {'label': '4-09-04 Artificial Intelligence, Image and Language Processing',
-      'value': '4-09-04 Artificial Intelligence, Image and Language Processing'}]},
-   {'label': '4-10 Construction Engineering and Architecture',
-    'value': '4-10 Construction Engineering and Architecture',
-    'children': [{'label': '4-10-01 Architecture, Building and Construction History, Sustainable Building Technology, Building Design',
-      'value': '4-10-01 Architecture, Building and Construction History, Sustainable Building Technology, Building Design'},
-     {'label': '4-10-02 Urbanism, Spatial Planning, Transportation and Infrastructure Planning, Landscape Planning',
-      'value': '4-10-02 Urbanism, Spatial Planning, Transportation and Infrastructure Planning, Landscape Planning'},
-     {'label': '4-10-04 Sructural Engineering, Building Informatics, Construction Operation',
-      'value': '4-10-04 Sructural Engineering, Building Informatics, Construction Operation'},
-     {'label': '4-10-06 Geotechnics, Hydraulic Engineering',
-      'value': '4-10-06 Geotechnics, Hydraulic Engineering'}]}]}]
-    # Note: The structure above is for illustration purposes. To reach approximately 200 nodes, you would need to further expand each folder and sub-folder accordingly.
-
-
+    # Create nodes to display in tree select hierarchy
+    nodes = subject_hierarchy_list # create hierarchy from subjects present in re3data dump
     return_select = tree_select(nodes)
     st.write(return_select)
 
