@@ -460,4 +460,4 @@ with col[1]:
     #heatmap = make_heatmap(df_reshaped, 'year', 'states', 'population', selected_color_theme)
     #st.altair_chart(heatmap, use_container_width=True)
     
-    st.dataframe(pd_grouped, use_container_width=True)
+    st.dataframe(pd_grouped_subjcts, use_container_width=True)
