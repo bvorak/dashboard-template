@@ -290,7 +290,7 @@ with st.sidebar:
     nodes = subject_hierarchy_list # create hierarchy from subjects present in re3data dump
     return_select = tree_select(nodes)
     st.write(return_select)
-    st.write(return_select["checked"])
+    
 
 #######################
 # Plots
@@ -460,4 +460,12 @@ with col[1]:
     #heatmap = make_heatmap(df_reshaped, 'year', 'states', 'population', selected_color_theme)
     #st.altair_chart(heatmap, use_container_width=True)
     
-    st.dataframe(pd_grouped_subjcts, use_container_width=True)
+
+
+    selected_subjects = return_select["checked"]
+
+    # Filter the DataFrame to keep only rows where any of the values in 'hierarchy' is in the given list of values
+    ### make sure this is the logic we want!
+    filtered_df = pd_grouped_subjcts[pd_grouped_subjcts['hierarchy'].apply(lambda x: any(item in selected_subjects for item in x))]
+
+    st.dataframe(filtered_df, use_container_width=True)
