@@ -468,4 +468,5 @@ with col[1]:
     ### make sure this is the logic we want!
     filtered_df = pd_grouped_subjcts[pd_grouped_subjcts['hierarchy'].apply(lambda x: any(item in selected_subjects for item in x))]
 
-    st.dataframe(filtered_df, use_container_width=True)
+    st.dataframe(filtered_df[["subjects", "hierarchy"]], use_container_width=True)
+    st.write("Number of selected disciplines is: " + str(len(return_select["checked"])) + " and number of disciplines filterd from data is: " + str(filtered_df.shape[0]) )
