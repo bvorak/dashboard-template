@@ -214,7 +214,7 @@ def build_hierarchy_dict(dataframe):
                 current[level] = {'sub': {}, 'level_placeholder': True}  # Mark as placeholder
             if i == len(path) - 1:  # Last item in hierarchy
                 current[level]['description'] = row['description']
-                current[level]['value'] = f"{level} {row['description']}"
+                current[level]['value'] = f"{level}"
                 current[level]['label'] = f"{level} {row['description']}"
                 current[level]['level_placeholder'] = False  # Actual data, not a placeholder
             current = current[level]['sub']
