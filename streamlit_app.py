@@ -290,7 +290,7 @@ with st.sidebar:
     nodes = subject_hierarchy_list # create hierarchy from subjects present in re3data dump
     return_select = tree_select(nodes)
     st.write(return_select)
-
+    st.write(return_select[0])
 
 #######################
 # Plots
