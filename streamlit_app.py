@@ -470,3 +470,4 @@ with col[1]:
 
     st.dataframe(filtered_df[["subjects", "hierarchy"]], use_container_width=True)
     st.write("Number of selected disciplines is: " + str(len(return_select["checked"])) + " and number of disciplines filterd from data is: " + str(filtered_df.shape[0]) )
+    st.write(subject_hierarchy_dict)
